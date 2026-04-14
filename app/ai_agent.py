@@ -63,7 +63,7 @@ def ask_llm(prompt: str) -> str:
         # 💬 CALL MODEL
         # -------------------------
         response = client.chat.completions.create(
-            model="llama3-8b-8192",  # ✅ stable model
+            model="llama-3.1-8b-instant",  # ✅ stable model
             messages=[
                 {
                     "role": "user",
