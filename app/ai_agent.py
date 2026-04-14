@@ -1,42 +1,81 @@
-from groq import Groq
+# -------------------------
+# 🤖 AI AGENT (PRODUCTION SAFE)
+# -------------------------
+
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Try importing Groq safely
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Optional: for Streamlit secrets
+try:
+    import streamlit as st
+except:
+    st = None
 
-def ask_llm(prompt):
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # fast + powerful
-        messages=[
-            {"role": "system", "content": "You are an autonomous data engineering AI agent."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3
-    )
 
-    return response.choices[0].message.content
-
-def decide_schema_mapping(columns):
-    prompt = f"""
-    Given these columns: {columns}
-    Suggest a unified schema.
+def get_api_key():
     """
-    return ask_llm(prompt)
-
-
-def decide_conflict_strategy(sample_data):
-    prompt = f"""
-    Analyze this data: {sample_data}
-    Decide conflict resolution strategy.
+    Get API key from environment or Streamlit secrets
     """
-    return ask_llm(prompt)
+    # 1. Try environment variable
+    api_key = os.getenv("GROQ_API_KEY")
+
+    # 2. Try Streamlit secrets (for cloud)
+    if not api_key and st is not None:
+        try:
+            api_key = st.secrets.get("GROQ_API_KEY")
+        except:
+            pass
+
+    return api_key
 
 
-def analyze_data_quality(df_sample):
-    prompt = f"""
-    Analyze this dataset: {df_sample}
-    Identify quality issues.
+def ask_llm(prompt: str) -> str:
     """
-    return ask_llm(prompt)
+    Send prompt to Groq LLM and return response safely
+    """
+
+    try:
+        # -------------------------
+        # 🔐 GET API KEY
+        # -------------------------
+        api_key = get_api_key()
+
+        if not api_key:
+            return "⚠️ AI unavailable: Missing GROQ_API_KEY (set in .env or Streamlit Secrets)"
+
+        # -------------------------
+        # 📦 CHECK GROQ INSTALL
+        # -------------------------
+        if Groq is None:
+            return "⚠️ AI unavailable: 'groq' package not installed"
+
+        # -------------------------
+        # 🤖 INIT CLIENT
+        # -------------------------
+        client = Groq(api_key=api_key)
+
+        # -------------------------
+        # 💬 CALL MODEL
+        # -------------------------
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",  # ✅ stable model
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        # -------------------------
+        # 🛡️ FAIL-SAFE (NO CRASH)
+        # -------------------------
+        return f"⚠️ AI temporarily unavailable: {str(e)}"

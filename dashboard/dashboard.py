@@ -15,6 +15,11 @@ from app.agent import run_agent
 from app.vector_memory import query_memory
 from app.ai_agent import ask_llm
 
+import os
+import streamlit as st
+
+st.write("DEBUG KEY:", os.getenv("GROQ_API_KEY"))
+
 # -------------------------
 # ⚙️ PAGE CONFIG
 # -------------------------
